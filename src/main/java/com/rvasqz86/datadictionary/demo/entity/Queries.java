@@ -8,7 +8,7 @@ public class Queries {
         "       is_nullable as isNullable,\n" +
         "       false as primaryKey,\n" +
         "       NULL as relatedTo,\n" +
-        "       NULL as description,\n" +
+        "       'Replace me' as description,\n" +
         "       column_default as defaultValue\n" +
         "from information_schema.columns\n" +
         "where table_schema not in ('information_schema', 'pg_catalog')\n" +

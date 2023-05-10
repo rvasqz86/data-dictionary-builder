@@ -5,9 +5,7 @@ import com.rvasqz86.datadictionary.demo.entity.meta.pojo.Table;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import static com.rvasqz86.datadictionary.demo.WriterUtils.pad;
 
@@ -16,6 +14,7 @@ public class MarkdownBuilder {
     public String build(List<Table> tables) {
         StringBuilder builder = new StringBuilder();
         builder.append("## Tables\n");
+
 
         for(int i = 0; i < tables.size();i++) {
             Table table = tables.get(i);
@@ -44,6 +43,9 @@ public class MarkdownBuilder {
         for(Table table: tables) {
             builder.append(String.format("## %s\n\n", table.getTableName()));
 
+            builder.append("\n");
+            builder.append(String.format("*%s*\n\n", "Add a description"));
+
             builder.append(tableHeaderForRelated);
             builder.append(tableDividerForRelated);
             if(table.getRelatedTables() ==  null) {
@@ -65,12 +67,7 @@ public class MarkdownBuilder {
                         pad(column.getDescription(),16)));
             }
         }
-
-        builder.append(String.format("|%s|%s|%s|%s|\n",
-                pad("",16,"-"),
-                pad("",16,"-"),
-                pad("",16,"-"),
-                pad("",16,"-")));
+        builder.append("\n\n");
 
 
         return builder.toString();
