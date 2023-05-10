@@ -13,6 +13,7 @@ import java.util.List;
 public class Table {
     private String tableName;
     private List<Column> columns;
+    private List<String> relatedTables;
 
     public Table(String tableName) {
         this.tableName = tableName;

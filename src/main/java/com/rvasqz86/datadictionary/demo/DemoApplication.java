@@ -50,11 +50,18 @@ public class DemoApplication {
 		return null;
 	}
 
+	public static String pad(String string, int pad,  String padValue) {
+		if(string == null || string.equals("null") ) {
+			string = "";
+		}
+		return StringUtils.leftPad(string, pad *5, padValue);
+	}
+
 	public static String pad(String string, int pad) {
 		if(string == null || string.equals("null") ) {
 			string = "";
 		}
-		return StringUtils.leftPad(string, pad *2, " ");
+		return StringUtils.leftPad(string, pad *5, " ");
 	}
 	static void extract() {
 		String getAllColumnsQuery = "select table_schema as tableSchema,\n" +
@@ -114,43 +121,69 @@ public class DemoApplication {
 		List<ForeignKey> fks = new Mapper<ForeignKey>(new ObjectMapper()).map(foreignKeyResultSet, ForeignKey.class);
 		Set<Table> tables = columns.stream().map(Column::getTableName).map(Table::new).collect(Collectors.toSet());
 
-		for(PrimaryKey pk: pks) {
-			for(Column column: columns) {
-				if(column.getTableName().equals(pk.getTableName()) && pk.getKeyColumns().contains(column.getColumnName())) {
-					column.setPrimaryKey(true);
-				}
-			}
-		}
-		for(ForeignKey fk: fks) {
-			for(Column column: columns) {
-				if(column.getTableName().equals(fk.getPrimaryTable()) && fk.getKeyColumns().contains(column.getColumnName()) ||  column.getTableName().equals(fk.getForeignTable())  ) {
-					Table related = tables.stream().filter(t-> t.getTableName().equals(column.getTableName())).findFirst().orElseThrow();
-					Set<Table> existing = new HashSet<>(Optional.ofNullable(column.getRelatedTo()).orElse(new ArrayList<>()));
-					existing.add(related);
-					column.setRelatedTo(existing.stream().toList());
-				}
-			}
-		}
+
 
 		for(Table table: tables) {
 			table.setColumns(columns.stream().filter(column -> column.getTableName().equals(table.getTableName())).collect(Collectors.toList()));
 		}
+
+
+		for(PrimaryKey pk: pks) {
+			for(Table table: tables) {
+				if(table.getTableName().equalsIgnoreCase(pk.getTableName())) {
+					List<Column> cols = table.getColumns();
+					for(Column column: cols) {
+						if(column.getColumnName().equalsIgnoreCase(pk.getKeyColumns())) {
+							column.setPrimaryKey(true);
+						}
+					}
+				}
+			}
+		}
+		for(ForeignKey fk: fks) {
+			String pTable = fk.getPrimaryTable();
+			String fTable = fk.getForeignTable();
+			if(pTable.contains(".")) {
+				pTable = pTable.split("\\.")[1];
+				fTable = fTable.split("\\.")[1];
+			}
+			String finalPTable = pTable;
+			String finalFtable = fTable;
+			Table primaryTable = tables.stream().filter(table->table.getTableName().equalsIgnoreCase(finalPTable)).findFirst().orElseThrow();
+			Table foreignTable = tables.stream().filter(table->table.getTableName().equalsIgnoreCase(finalFtable)).findFirst().orElseThrow();
+			Set<String> primaryRelatedTables = new HashSet<>();
+			if(primaryTable.getRelatedTables() != null) {
+				primaryRelatedTables.addAll(primaryTable.getRelatedTables());
+			}
+			primaryRelatedTables.add(foreignTable.getTableName());
+			primaryTable.setRelatedTables(primaryRelatedTables.stream().toList());
+		}
 		StringBuilder builder = new StringBuilder();
 		builder.append("## Tables\n");
-		builder.append(String.format("|%s|%s|%s|%s|%s|\n", pad("Table Name",16), pad("Column Name",16), pad("Data Type",16),pad("Related Tables",16), pad("Description",16)));
-		builder.append(String.format("|%s|%s|%s|%s|%s|\n", pad("-----------------",16),pad("-----------------",16), pad("-----------------",16),pad("-----------------",16),
-				pad("-----------------",16)));
+
+		builder.append(String.format("|%s|%s|%s|%s|%s|%s|\n", pad("Table Name",16), pad("Column Name",16), pad("Data Type",16),pad("Related Tables",16),pad("Primary Key", 16), pad("Description",16)));
+		builder.append(String.format("|%s|%s|%s|%s|%s|%s|\n", pad("",16,"-"),  pad("",16,"-"), pad("",16,"-"),
+				pad("",16,"-"),
+				pad("",16,"-"),
+				pad("",16,"-")));
 		for(Table table: tables) {
-			builder.append(String.format("|%s|%s|%s|%s|%s|\n", pad(table.getTableName(), 16), pad("",16),pad("",16), pad("",16), pad("",16)));
+			builder.append(String.format("|%s|%s|%s|%s|%s|%s|\n", pad(table.getTableName(), 16), pad("",16),pad("",16), pad("",16), pad("",16), pad("",16)));
+
+			builder.append(String.format("|%s|%s|%s|%s|%s|%s|\n", pad("Related Tables",16),pad(String.join(",", Optional.ofNullable(table.getRelatedTables()).orElse(new ArrayList<>())), 16),pad("",16), pad("",16), pad("",16), pad("",16)));
 			for(Column column: table.getColumns()) {
-				builder.append(String.format("|%s|%s|%s|%s|%s|\n",
+				builder.append(String.format("|%s|%s|%s|%s|%s|%s|\n",
 						pad("", 16),
 						pad(column.getColumnName(), 16),
 						pad(column.getDataType(), 16),
 						pad(column.getRelatedTo() == null? "" : column.getRelatedTo().stream().map(Table::getTableName).collect(Collectors.joining()), 16),
+						pad(Boolean.toString(column.isPrimaryKey()), 16),
 						pad(column.getDescription(),16)));
 			}
 		}
+		builder.append(String.format("|%s|%s|%s|%s|%s|%s|\n", pad("",16,"-"),  pad("",16,"-"), pad("",16,"-"),
+				pad("",16,"-"),
+				pad("",16,"-"),
+				pad("",16,"-")));
 
 		try {
 			FileWriter myWriter = new FileWriter("out.md");
