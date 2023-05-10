@@ -1,6 +1,7 @@
-package com.rvasqz86.datadictionary.demo.entity.meta;
+package com.rvasqz86.datadictionary.demo.entity.meta.pojo;
 
 
+import com.rvasqz86.datadictionary.demo.entity.meta.pojo.Column;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;

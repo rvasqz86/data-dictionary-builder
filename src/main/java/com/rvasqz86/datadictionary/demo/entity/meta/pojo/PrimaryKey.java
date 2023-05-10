@@ -1,4 +1,4 @@
-package com.rvasqz86.datadictionary.demo.entity.meta;
+package com.rvasqz86.datadictionary.demo.entity.meta.pojo;
 
 import lombok.Data;
 
